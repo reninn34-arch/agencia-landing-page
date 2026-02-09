@@ -144,14 +144,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   }, [localContent.adminPassword, confirmPass]);
 
-  const handleSaveContent = () => {
+  const handleSaveContent = async () => {
     if (passError) {
       alert("Por favor, corrige los errores de contraseña.");
       return;
     }
     setIsSaving(true);
-    updateContent(localContent);
-    setTimeout(() => setIsSaving(false), 1000);
+    
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      
+      if (apiUrl) {
+        // Save to database via API
+        const response = await fetch(`${apiUrl}/api/content`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: localContent,
+            password: localContent.adminPassword
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save to database');
+        }
+      }
+      
+      // Update local context
+      updateContent(localContent);
+      alert('Contenido guardado exitosamente');
+    } catch (err) {
+      console.error('Error saving content:', err);
+      alert('Error al guardar. Los cambios se guardaron localmente.');
+      updateContent(localContent);
+    } finally {
+      setTimeout(() => setIsSaving(false), 1000);
+    }
   };
 
   const handleTopLevelChange = (field: keyof SiteContent, value: any) => {
