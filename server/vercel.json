@@ -1,0 +1,12 @@
+{
+  "name": "agencia-backend",
+  "version": "1.0.0",
+  "buildCommand": "npm install",
+  "devCommand": "npm run dev",
+  "framework": "express",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "ADMIN_PASSWORD": "@admin_password",
+    "NODE_ENV": "production"
+  }
+}

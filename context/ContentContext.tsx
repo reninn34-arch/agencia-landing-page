@@ -179,14 +179,62 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [projects, setProjects] = useState<Project[]>([]);
   const [content, setContent] = useState<SiteContent>(defaultContent);
   const [isLoaded, setIsLoaded] = useState(false);
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+  // Load content from API or localStorage
   useEffect(() => {
-    const savedProjects = localStorage.getItem('el_digital_projects');
-    const savedContent = localStorage.getItem('el_digital_content');
-    if (savedProjects) { try { setProjects(JSON.parse(savedProjects)); } catch { setProjects(defaultProjects); } } else { setProjects(defaultProjects); }
-    if (savedContent) { try { setContent(JSON.parse(savedContent)); } catch { setContent(defaultContent); } } else { setContent(defaultContent); }
+    const loadContent = async () => {
+      try {
+        // Try loading from API first
+        const response = await fetch(`${apiUrl}/api/content`);
+        if (response.ok) {
+          const apiContent = await response.json();
+          setContent(apiContent);
+          localStorage.setItem('el_digital_content', JSON.stringify(apiContent));
+        } else {
+          // Fallback to localStorage
+          const savedContent = localStorage.getItem('el_digital_content');
+          if (savedContent) {
+            try {
+              setContent(JSON.parse(savedContent));
+            } catch {
+              setContent(defaultContent);
+            }
+          } else {
+            setContent(defaultContent);
+          }
+        }
+      } catch (err) {
+        console.log('API not available, using localStorage');
+        // Fallback to localStorage if API is not available
+        const savedContent = localStorage.getItem('el_digital_content');
+        if (savedContent) {
+          try {
+            setContent(JSON.parse(savedContent));
+          } catch {
+            setContent(defaultContent);
+          }
+        }
+      }
+    };
+
+    const loadProjects = () => {
+      const savedProjects = localStorage.getItem('el_digital_projects');
+      if (savedProjects) {
+        try {
+          setProjects(JSON.parse(savedProjects));
+        } catch {
+          setProjects(defaultProjects);
+        }
+      } else {
+        setProjects(defaultProjects);
+      }
+    };
+
+    loadContent();
+    loadProjects();
     setIsLoaded(true);
-  }, []);
+  }, [apiUrl]);
 
   useEffect(() => {
     if (isLoaded) {
