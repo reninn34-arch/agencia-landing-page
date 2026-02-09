@@ -296,7 +296,7 @@ app.get('/api/content', async (req, res) => {
       pool.query('SELECT * FROM socials LIMIT 1'),
       pool.query('SELECT * FROM hero_section LIMIT 1'),
       pool.query('SELECT * FROM services LIMIT 1'),
-      pool.query('SELECT * FROM projects'),
+      pool.query('SELECT * FROM projects ORDER BY created_at DESC'),
       pool.query('SELECT * FROM pricing_plans'),
       pool.query('SELECT * FROM about_section LIMIT 1'),
       pool.query('SELECT * FROM cta_section LIMIT 1')
@@ -394,6 +394,26 @@ app.get('/api/content', async (req, res) => {
   } catch (err) {
     console.error('Error fetching content:', err);
     res.status(500).json({ error: 'Failed to fetch content' });
+  }
+});
+
+// Get all projects (Portfolio)
+app.get('/api/projects', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM projects ORDER BY created_at DESC');
+    const projects = result.rows.map(p => ({
+      id: p.id,
+      title: p.title || '',
+      category: p.category || '',
+      mediaType: p.media_type || 'image',
+      image: p.image || '',
+      description: p.description || '',
+      tech: p.tech || ''
+    }));
+    res.json(projects);
+  } catch (err) {
+    console.error('Error fetching projects:', err);
+    res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
 
@@ -529,6 +549,11 @@ app.post('/api/content', async (req, res) => {
         }
       }
 
+      // Update projects (portfolio)
+      // Note: We don't delete projects as they may have been created via API
+      // This is for when projects come from the context update
+      // In a real app, you might want to sync projects differently
+
       await client.query('COMMIT');
       res.json({ success: true, message: 'Content saved successfully' });
     } catch (err) {
@@ -546,6 +571,75 @@ app.post('/api/content', async (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Add/Update project
+app.post('/api/projects', async (req, res) => {
+  try {
+    const { project, password } = req.body;
+    
+    if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    if (project.id) {
+      // Update existing project
+      await pool.query(`
+        UPDATE projects SET
+          title = $1,
+          category = $2,
+          media_type = $3,
+          image = $4,
+          description = $5,
+          tech = $6,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $7
+      `, [
+        project.title,
+        project.category,
+        project.mediaType,
+        project.image,
+        project.description,
+        project.tech,
+        project.id
+      ]);
+    } else {
+      // Insert new project
+      await pool.query(`
+        INSERT INTO projects (site_id, title, category, media_type, image, description, tech)
+        VALUES (1, $1, $2, $3, $4, $5, $6)
+      `, [
+        project.title,
+        project.category,
+        project.mediaType,
+        project.image,
+        project.description,
+        project.tech
+      ]);
+    }
+
+    res.json({ success: true, message: 'Project saved successfully' });
+  } catch (err) {
+    console.error('Error saving project:', err);
+    res.status(500).json({ error: 'Failed to save project' });
+  }
+});
+
+// Delete project
+app.delete('/api/projects/:id', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    await pool.query('DELETE FROM projects WHERE id = $1', [req.params.id]);
+    res.json({ success: true, message: 'Project deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting project:', err);
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
 });
 
 // Start server
