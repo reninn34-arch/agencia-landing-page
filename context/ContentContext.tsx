@@ -179,7 +179,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [projects, setProjects] = useState<Project[]>([]);
   const [content, setContent] = useState<SiteContent>(defaultContent);
   const [isLoaded, setIsLoaded] = useState(false);
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Load content from API or localStorage
   useEffect(() => {
