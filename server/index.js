@@ -222,6 +222,54 @@ const initDatabase = async () => {
         'Atención Personalizada', 'Comprometidos con tu éxito.'
       ]);
 
+      // Add default pricing plans
+      const plan1Result = await client.query(`
+        INSERT INTO pricing_plans (site_id, plan_name, price, period, button_text, is_popular)
+        VALUES (1, $1, $2, $3, $4, $5) RETURNING id
+      `, ['Básico', '$199', '/mes', 'Empezar ahora', false]);
+
+      const plan1Id = plan1Result.rows[0].id;
+      await client.query(`
+        INSERT INTO plan_features (plan_id, feature)
+        VALUES
+          ($1, $2),
+          ($1, $3),
+          ($1, $4),
+          ($1, $5)
+      `, [plan1Id, 'Gestión de 1 Red Social', '4 Posts Mensuales', 'Soporte Vía Email', 'Reporte Mensual']);
+
+      const plan2Result = await client.query(`
+        INSERT INTO pricing_plans (site_id, plan_name, price, period, button_text, is_popular)
+        VALUES (1, $1, $2, $3, $4, $5) RETURNING id
+      `, ['Profesional', '$499', '/mes', 'Plan más elegido', true]);
+
+      const plan2Id = plan2Result.rows[0].id;
+      await client.query(`
+        INSERT INTO plan_features (plan_id, feature)
+        VALUES
+          ($1, $2),
+          ($1, $3),
+          ($1, $4),
+          ($1, $5),
+          ($1, $6)
+      `, [plan2Id, 'Gestión de 3 Redes', '12 Posts Mensuales', 'Atención Prioritaria', 'Análisis de Competencia', 'Diseño de Landing Page']);
+
+      const plan3Result = await client.query(`
+        INSERT INTO pricing_plans (site_id, plan_name, price, period, button_text, is_popular)
+        VALUES (1, $1, $2, $3, $4, $5) RETURNING id
+      `, ['Elite', '$999', '/mes', 'Contactar para detalles', false]);
+
+      const plan3Id = plan3Result.rows[0].id;
+      await client.query(`
+        INSERT INTO plan_features (plan_id, feature)
+        VALUES
+          ($1, $2),
+          ($1, $3),
+          ($1, $4),
+          ($1, $5),
+          ($1, $6)
+      `, [plan3Id, 'Redes Ilimitadas', 'Contenido Diario', 'Estrategia Ads Full', 'Software a Medida', 'Consultoría 1 a 1']);
+
       await client.query(`
         INSERT INTO cta_section (title, text, button_text, whatsapp_number, background_image)
         VALUES ($1, $2, $3, $4, $5)
