@@ -222,7 +222,21 @@ const initDatabase = async () => {
         'Atención Personalizada', 'Comprometidos con tu éxito.'
       ]);
 
-      // Add default pricing plans
+      await client.query(`
+        INSERT INTO cta_section (title, text, button_text, whatsapp_number, background_image)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [
+        '¿Listos para crecer tu negocio?',
+        '¡Hablemos hoy! Descubre cómo podemos llevar tu empresa al siguiente nivel.',
+        'Contáctanos',
+        '521234567890',
+        'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80'
+      ]);
+    }
+
+    // Seed default pricing plans if empty (even if settings already exist)
+    const pricingResult = await client.query('SELECT COUNT(*) FROM pricing_plans');
+    if (parseInt(pricingResult.rows[0].count) === 0) {
       const plan1Result = await client.query(`
         INSERT INTO pricing_plans (site_id, plan_name, price, period, button_text, is_popular)
         VALUES (1, $1, $2, $3, $4, $5) RETURNING id
@@ -269,17 +283,6 @@ const initDatabase = async () => {
           ($1, $5),
           ($1, $6)
       `, [plan3Id, 'Redes Ilimitadas', 'Contenido Diario', 'Estrategia Ads Full', 'Software a Medida', 'Consultoría 1 a 1']);
-
-      await client.query(`
-        INSERT INTO cta_section (title, text, button_text, whatsapp_number, background_image)
-        VALUES ($1, $2, $3, $4, $5)
-      `, [
-        '¿Listos para crecer tu negocio?',
-        '¡Hablemos hoy! Descubre cómo podemos llevar tu empresa al siguiente nivel.',
-        'Contáctanos',
-        '521234567890',
-        'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1600&q=80'
-      ]);
     }
     
     client.release();
