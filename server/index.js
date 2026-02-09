@@ -330,20 +330,20 @@ app.get('/api/content', async (req, res) => {
         );
         return {
           id: plan.id,
-          name: plan.plan_name,
-          price: plan.price,
-          period: plan.period,
-          buttonText: plan.button_text,
-          isPopular: plan.is_popular,
-          features: features.rows.map(f => f.feature)
+          name: plan.plan_name || '',
+          price: plan.price || '',
+          period: plan.period || '',
+          buttonText: plan.button_text || '',
+          isPopular: plan.is_popular || false,
+          features: features.rows.map(f => f.feature || '')
         };
       })
     );
 
     const content = {
       logo: settingsRow.logo || '',
-      siteName: settingsRow.site_name || 'Digital Agency',
-      adminPassword: settingsRow.admin_password || 'admin123',
+      siteName: settingsRow.site_name || '',
+      adminPassword: settingsRow.admin_password || '',
       socials: {
         facebook: socialsRow.facebook || '',
         instagram: socialsRow.instagram || '',
@@ -364,8 +364,8 @@ app.get('/api/content', async (req, res) => {
         sectionSubtitle: servicesRow.section_subtitle || '',
         items: serviceItems.rows.map(item => ({
           id: item.id,
-          title: item.title,
-          description: item.description
+          title: item.title || '',
+          description: item.description || ''
         }))
       },
       plans: {
@@ -377,8 +377,8 @@ app.get('/api/content', async (req, res) => {
         sectionTitle: aboutRow.section_title || '',
         items: aboutItems.rows.map(item => ({
           id: item.id,
-          title: item.title,
-          description: item.description
+          title: item.title || '',
+          description: item.description || ''
         }))
       },
       cta: {
