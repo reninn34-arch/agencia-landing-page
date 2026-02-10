@@ -20,6 +20,12 @@ const Portfolio: React.FC = () => {
     return url; 
   };
 
+  const isImageUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith('data:image/')) return true;
+    return /\.(png|jpe?g|gif|webp|svg)(\?.*|#.*)?$/i.test(url);
+  };
+
   return (
     <section id="portafolio" className="py-24 bg-background-light">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,49 +59,67 @@ const Portfolio: React.FC = () => {
         {/* Grid Projects */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
-              <div 
-                key={project.id} 
-                className="group relative h-72 rounded-xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 bg-secondary"
-              >
-                {/* MEDIA */}
-                {project.mediaType === 'video' ? (
-                   <iframe 
-                      className="w-full h-full object-cover"
-                      src={getVideoSrc(project.image)} 
-                      title={project.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                   ></iframe>
-                ) : (
-                   <img 
-                      src={project.image} 
-                      alt={project.title} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                   />
-                )}
-                
-                {/* Overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent flex flex-col justify-end p-6 ${project.mediaType === 'video' ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <span className="text-primary text-xs font-bold uppercase tracking-wider mb-2 block">
-                            {project.category}
-                        </span>
-                        <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
-                        <p className="text-slate-300 text-xs line-clamp-2">{project.description}</p>
-                    </div>
-                </div>
+            filteredProjects.map((project) => {
+              const isImage = isImageUrl(project.image);
+              const isVideo = project.mediaType === 'video';
+              const isLink = !isVideo && !isImage && !!project.image;
+              const handleOpen = () => {
+                if (isVideo || isLink) {
+                  window.open(project.image, '_blank', 'noopener,noreferrer');
+                }
+              };
 
-                {project.mediaType === 'video' && (
-                  <div className="absolute top-4 right-4 pointer-events-none">
-                     <div className="bg-red-600 text-white p-2 rounded-full shadow-lg">
-                        <PlayCircle size={20} />
+              return (
+                <div 
+                  key={project.id} 
+                  className={`group relative h-72 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 bg-secondary ${isVideo || isLink ? 'cursor-pointer' : ''}`}
+                  onClick={handleOpen}
+                >
+                  {/* MEDIA */}
+                  {isVideo ? (
+                     <iframe 
+                        className="w-full h-full object-cover pointer-events-none"
+                        src={getVideoSrc(project.image)} 
+                        title={project.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                     ></iframe>
+                  ) : isImage ? (
+                     <img 
+                        src={project.image} 
+                        alt={project.title} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                     />
+                  ) : (
+                     <div className="w-full h-full flex flex-col items-center justify-center text-white/80 gap-2 px-6 text-center">
+                        <ExternalLink size={28} />
+                        <p className="text-xs font-bold uppercase tracking-wider">Abrir sitio</p>
+                        <p className="text-[10px] text-white/60 truncate w-full">{project.image}</p>
                      </div>
+                  )}
+                  
+                  {/* Overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-t from-secondary via-secondary/60 to-transparent flex flex-col justify-end p-6 ${isVideo ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
+                      <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          <span className="text-primary text-xs font-bold uppercase tracking-wider mb-2 block">
+                              {project.category}
+                          </span>
+                          <h3 className="text-xl font-bold text-white mb-1">{project.title}</h3>
+                          <p className="text-slate-300 text-xs line-clamp-2">{project.description}</p>
+                      </div>
                   </div>
-                )}
-              </div>
-            ))
+
+                  {isVideo && (
+                    <div className="absolute top-4 right-4 pointer-events-none">
+                       <div className="bg-red-600 text-white p-2 rounded-full shadow-lg">
+                          <PlayCircle size={20} />
+                       </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
               <p className="text-slate-500">No hay proyectos en esta categoría aún.</p>
