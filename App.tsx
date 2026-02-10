@@ -32,7 +32,7 @@ const AdminFlow: React.FC<{
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === content.adminPassword) {
+    if (content && password === content.adminPassword) {
       setView('admin');
       setPassword('');
       setLoginError('');

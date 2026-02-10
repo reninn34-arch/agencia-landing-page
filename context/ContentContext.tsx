@@ -178,7 +178,7 @@ const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [content, setContent] = useState<SiteContent>(defaultContent);
+  const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
@@ -238,7 +238,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [apiUrl]);
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && content) {
       localStorage.setItem('el_digital_projects', JSON.stringify(projects));
       localStorage.setItem('el_digital_content', JSON.stringify(content));
     }
