@@ -46,10 +46,10 @@ const Footer: React.FC<FooterProps> = ({ onAdminClick }) => {
            <span>&copy; {new Date().getFullYear()} {siteName}. Todos los derechos reservados.</span>
            <button 
              onClick={(e) => { e.preventDefault(); onAdminClick(); }}
-             className="hidden text-slate-700 hover:text-slate-500 mt-2 md:mt-0 flex items-center gap-1"
-             title="Admin"
+             className="text-slate-700 hover:text-primary transition-colors mt-2 md:mt-0"
+             title="Acceso administrativo"
            >
-             <Lock size={10} /> Admin
+             <Lock size={16} />
            </button>
         </div>
       </div>
