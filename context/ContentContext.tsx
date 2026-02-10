@@ -168,6 +168,7 @@ interface ContentContextType {
   content: SiteContent;
   isLoaded: boolean;
   updateContent: (newContent: SiteContent) => void;
+  updateProjects: (newProjects: Project[]) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: number) => void;
@@ -291,13 +292,14 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [projects, content, isLoaded]);
 
   const updateContent = (newContent: SiteContent) => setContent(newContent);
+  const updateProjects = (newProjects: Project[]) => setProjects(newProjects);
   const addProject = (projectData: Omit<Project, 'id'>) => setProjects([{ ...projectData, id: Date.now() }, ...projects]);
   const updateProject = (updatedProject: Project) => setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
   const deleteProject = (id: number) => setProjects(projects.filter(p => p.id !== id));
   const resetToDefaults = () => { if(confirm("¿Restaurar todo?")) { setProjects(defaultProjects); setContent(defaultContent); } };
 
   return (
-    <ContentContext.Provider value={{ projects, content, isLoaded, updateContent, addProject, updateProject, deleteProject, resetToDefaults }}>
+    <ContentContext.Provider value={{ projects, content, isLoaded, updateContent, updateProjects, addProject, updateProject, deleteProject, resetToDefaults }}>
       {children}
     </ContentContext.Provider>
   );

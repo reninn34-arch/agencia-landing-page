@@ -152,9 +152,10 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
-  const { projects, content, updateContent, addProject, updateProject, deleteProject, resetToDefaults } = useContent();
+  const { projects, content, updateContent, updateProjects, addProject, updateProject, deleteProject, resetToDefaults } = useContent();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [localContent, setLocalContent] = useState<SiteContent>(content);
+  const [localProjects, setLocalProjects] = useState<Project[]>(projects);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [currentProject, setCurrentProject] = useState<Partial<Project>>({});
@@ -163,8 +164,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   // Track if changes were made
   const hasUnsavedChanges = useMemo(() => {
-    return JSON.stringify(localContent) !== JSON.stringify(content);
-  }, [localContent, content]);
+    return JSON.stringify(localContent) !== JSON.stringify(content) || JSON.stringify(localProjects) !== JSON.stringify(projects);
+  }, [localContent, content, localProjects, projects]);
 
   // Password improvement states
   const [showPass, setShowPass] = useState(false);
@@ -173,8 +174,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   useEffect(() => { 
     setLocalContent(content); 
+    setLocalProjects(projects);
     setConfirmPass(content.adminPassword);
-  }, [content]);
+  }, [content, projects]);
 
   useEffect(() => {
     if (localContent.adminPassword !== confirmPass) {
@@ -203,13 +205,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           },
           body: JSON.stringify({
             content: localContent,
-            projects: projects,
+            projects: localProjects,
             password: localContent.adminPassword
           })
         });
 
         if (!response.ok) {
           throw new Error('Failed to save to database');
+        }
+
+        // After saving, reload projects from API to ensure they're synced
+        const projectsResponse = await fetch(`${apiUrl}/api/projects`);
+        if (projectsResponse.ok) {
+          const updatedProjects = await projectsResponse.json();
+          updateProjects(updatedProjects);
+          setLocalProjects(updatedProjects);
         }
       }
       
@@ -248,12 +258,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   const filteredProjects = useMemo(() => {
-    if (!projectSearch) return projects;
-    return projects.filter(p => 
+    if (!projectSearch) return localProjects;
+    return localProjects.filter(p => 
       p.title.toLowerCase().includes(projectSearch.toLowerCase()) || 
       p.category.toLowerCase().includes(projectSearch.toLowerCase())
     );
-  }, [projects, projectSearch]);
+  }, [localProjects, projectSearch]);
 
   const SidebarItem = ({ id, icon: Icon, label }: { id: Tab, icon: any, label: string }) => (
     <button 
@@ -654,7 +664,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <h4 className="font-black text-slate-900 truncate text-sm mb-4">{p.title}</h4>
                         <div className="flex gap-2">
                           <button onClick={() => { setCurrentProject(p); setIsEditingProject(true); }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 hover:bg-primary hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2"><Edit size={12}/> Editar</button>
-                          <button onClick={() => { if(confirm('¿Eliminar proyecto permanentemente?')) deleteProject(p.id); }} className="p-2.5 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={14}/></button>
+                          <button onClick={() => { if(confirm('¿Eliminar proyecto permanentemente?')) setLocalProjects(localProjects.filter(proj => proj.id !== p.id)); }} className="p-2.5 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={14}/></button>
                         </div>
                       </div>
                     </div>
@@ -682,8 +692,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                       <form 
                         onSubmit={e => { 
                           e.preventDefault(); 
-                          if(currentProject.id) updateProject(currentProject as Project); 
-                          else addProject(currentProject as Omit<Project,'id'>); 
+                          if(currentProject.id) {
+                            setLocalProjects(localProjects.map(p => p.id === currentProject.id ? (currentProject as Project) : p));
+                          } else {
+                            const newProject = { ...currentProject as Omit<Project, 'id'>, id: Date.now() };
+                            setLocalProjects([newProject as Project, ...localProjects]);
+                          }
                           setIsEditingProject(false); 
                         }} 
                         className="p-4 md:p-10 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar flex-1"
