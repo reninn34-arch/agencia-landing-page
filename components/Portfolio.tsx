@@ -109,14 +109,6 @@ const Portfolio: React.FC = () => {
                           <p className="text-slate-300 text-xs line-clamp-2">{project.description}</p>
                       </div>
                   </div>
-
-                  {isVideo && (
-                    <div className="absolute top-4 right-4 pointer-events-none">
-                       <div className="bg-red-600 text-white p-2 rounded-full shadow-lg">
-                          <PlayCircle size={20} />
-                       </div>
-                    </div>
-                  )}
                 </div>
               );
             })
