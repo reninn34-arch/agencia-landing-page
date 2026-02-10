@@ -177,9 +177,33 @@ interface ContentContextType {
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [content, setContent] = useState<SiteContent | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Try to get initial content from localStorage
+  const getInitialContent = (): SiteContent => {
+    const savedContent = localStorage.getItem('el_digital_content');
+    if (savedContent) {
+      try {
+        return JSON.parse(savedContent);
+      } catch {
+        return defaultContent;
+      }
+    }
+    return defaultContent;
+  };
+
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const savedProjects = localStorage.getItem('el_digital_projects');
+    if (savedProjects) {
+      try {
+        return JSON.parse(savedProjects);
+      } catch {
+        return defaultProjects;
+      }
+    }
+    return defaultProjects;
+  });
+  
+  const [content, setContent] = useState<SiteContent>(getInitialContent);
+  const [isLoaded, setIsLoaded] = useState(true);
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Load content from API or localStorage
