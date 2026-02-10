@@ -203,6 +203,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           },
           body: JSON.stringify({
             content: localContent,
+            projects: projects,
             password: localContent.adminPassword
           })
         });

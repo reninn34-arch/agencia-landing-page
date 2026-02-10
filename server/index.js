@@ -471,7 +471,7 @@ app.get('/api/projects', async (req, res) => {
 // Save content
 app.post('/api/content', async (req, res) => {
   try {
-    const { content, password } = req.body;
+    const { content, projects: projectsData, password } = req.body;
     
     // Verify password
     if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
@@ -601,9 +601,24 @@ app.post('/api/content', async (req, res) => {
       }
 
       // Update projects (portfolio)
-      // Note: We don't delete projects as they may have been created via API
-      // This is for when projects come from the context update
-      // In a real app, you might want to sync projects differently
+      if (projectsData && Array.isArray(projectsData)) {
+        // Delete existing projects and replace with new ones
+        await client.query('DELETE FROM projects WHERE site_id = 1');
+        
+        for (const project of projectsData) {
+          await client.query(`
+            INSERT INTO projects (site_id, title, category, media_type, image, description, tech)
+            VALUES (1, $1, $2, $3, $4, $5, $6)
+          `, [
+            project.title,
+            project.category,
+            project.mediaType,
+            project.image,
+            project.description,
+            project.tech
+          ]);
+        }
+      }
 
       await client.query('COMMIT');
       res.json({ success: true, message: 'Content saved successfully' });
