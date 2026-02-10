@@ -267,30 +267,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const SidebarItem = ({ id, icon: Icon, label }: { id: Tab, icon: any, label: string }) => (
     <button 
-      onClick={() => setActiveTab(id)} 
-      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+      onClick={() => {
+        setActiveTab(id);
+        setSidebarOpen(false); // Close sidebar on mobile when tab is selected
+      }}
+      className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-lg sm:rounded-2xl transition-all duration-300 group text-sm sm:text-base ${
         activeTab === id 
         ? 'bg-primary text-white shadow-lg shadow-primary/30' 
         : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
       }`}
     >
-      <div className="flex items-center gap-3">
-        <Icon size={18} className={`${activeTab === id ? 'scale-110' : 'opacity-70 group-hover:opacity-100'} transition-all`} />
-        <span className="font-bold text-sm tracking-tight">{label}</span>
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <Icon size={16} className={`shrink-0 ${activeTab === id ? 'scale-110' : 'opacity-70 group-hover:opacity-100'} transition-all`} />
+        <span className="font-bold tracking-tight truncate text-xs sm:text-sm">{label}</span>
       </div>
-      <ChevronRight size={14} className={`${activeTab === id ? 'opacity-100' : 'opacity-0'} transition-opacity`} />
+      <ChevronRight size={12} className={`shrink-0 ${activeTab === id ? 'opacity-100' : 'opacity-0'} transition-opacity`} />
     </button>
   );
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden text-slate-800 selection:bg-primary/20">
+      {/* OVERLAY - Closes sidebar on mobile when clicked */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR - Hidden on mobile, visible on larger screens */}
-      <aside className={`w-72 bg-white border-r border-slate-200 flex flex-col z-40 shadow-xl shadow-slate-200/50 fixed md:relative h-full transition-transform duration-300 ${
+      <aside className={`w-64 sm:w-72 bg-white border-r border-slate-200 flex flex-col z-40 shadow-2xl fixed md:relative h-full transition-transform duration-300 ease-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
-        <div className="p-8 border-b border-slate-50">
-          <div className="flex items-center gap-4 mb-1">
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black shadow-lg overflow-hidden shrink-0">
+        <div className="p-4 sm:p-8 border-b border-slate-50">
+          <div className="flex items-center gap-3 sm:gap-4 mb-1">
+            <div className="w-10 sm:w-12 h-10 sm:h-12 bg-slate-900 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black shadow-lg overflow-hidden shrink-0 text-sm">
                {localContent.logo ? (
                  <img src={localContent.logo} className="w-full h-full object-contain p-1" />
                ) : (
@@ -298,14 +309,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm font-black text-slate-900 truncate leading-none mb-1">{localContent.siteName}</h2>
-              <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">Admin Panel</span>
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 truncate leading-none mb-1">{localContent.siteName}</h2>
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">Admin Panel</span>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4 ml-2">Configuración</p>
+        <nav className="flex-1 p-3 sm:p-6 space-y-1 sm:space-y-2 overflow-y-auto custom-scrollbar">
+          <p className="text-[8px] sm:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-3 ml-2">Configuración</p>
           <SidebarItem id="general" icon={LayoutDashboard} label="Identidad y Marca" />
           <SidebarItem id="services" icon={Briefcase} label="Nuestros Servicios" />
           <SidebarItem id="plans" icon={CreditCard} label="Planes y Precios" />
@@ -314,18 +325,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <SidebarItem id="cta" icon={MessageSquare} label="Contacto Final" />
         </nav>
 
-        <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-3 sm:p-6 border-t border-slate-100 bg-slate-50/50 space-y-2">
           <button 
             onClick={resetToDefaults} 
-            className="w-full text-left p-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-red-500 flex items-center gap-2 transition-all rounded-xl hover:bg-red-50"
+            className="w-full text-left p-2 sm:p-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-red-500 flex items-center gap-2 transition-all rounded-lg sm:rounded-xl hover:bg-red-50"
           >
-            <RotateCcw size={14}/> Resetear Sitio
+            <RotateCcw size={14}/> <span className="hidden sm:inline">Resetear Sitio</span><span className="sm:hidden">Reset</span>
           </button>
           <button 
             onClick={onLogout} 
-            className="w-full mt-3 bg-slate-900 hover:bg-black text-white p-4 rounded-2xl flex items-center justify-center gap-3 transition-all font-black text-xs shadow-lg shadow-slate-300"
+            className="w-full bg-slate-900 hover:bg-black text-white p-3 sm:p-4 rounded-lg sm:rounded-2xl flex items-center justify-center gap-2 sm:gap-3 transition-all font-black text-xs shadow-lg shadow-slate-300"
           >
-            <LogOut size={16}/> CERRAR SESIÓN
+            <LogOut size={16}/> CERRAR
           </button>
         </div>
       </aside>
@@ -336,9 +347,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         <div className="sticky top-0 z-20 px-4 md:px-10 py-4 md:py-6 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200 flex justify-between items-center gap-4">
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+            className={`md:hidden p-3 rounded-lg transition-all shrink-0 transform active:scale-95 ${
+              sidebarOpen 
+              ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+              : 'text-slate-600 hover:bg-slate-100'
+            }`}
+            title={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
           >
-            <MenuIcon size={20} />
+            <MenuIcon size={22} />
           </button>
           <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
             <div className={`w-3 h-3 rounded-full shrink-0 ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></div>
