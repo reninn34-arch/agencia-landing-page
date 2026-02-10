@@ -166,6 +166,7 @@ const defaultProjects: Project[] = [
 interface ContentContextType {
   projects: Project[];
   content: SiteContent;
+  isLoaded: boolean;
   updateContent: (newContent: SiteContent) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
@@ -250,7 +251,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const resetToDefaults = () => { if(confirm("¿Restaurar todo?")) { setProjects(defaultProjects); setContent(defaultContent); } };
 
   return (
-    <ContentContext.Provider value={{ projects, content, updateContent, addProject, updateProject, deleteProject, resetToDefaults }}>
+    <ContentContext.Provider value={{ projects, content, isLoaded, updateContent, addProject, updateProject, deleteProject, resetToDefaults }}>
       {children}
     </ContentContext.Provider>
   );

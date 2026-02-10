@@ -14,9 +14,21 @@ const AdminFlow: React.FC<{
   view: 'home' | 'admin' | 'login', 
   setView: (v: 'home' | 'admin' | 'login') => void 
 }> = ({ view, setView }) => {
-  const { content } = useContent();
+  const { content, isLoaded } = useContent();
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+
+  // Show loading screen while content is loading
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
