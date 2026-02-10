@@ -55,6 +55,21 @@ interface MediaUploaderProps {
   helper?: string;
 }
 
+const isImageUrl = (url: string) => {
+  if (!url) return false;
+  if (url.startsWith('data:image/')) return true;
+  return /\.(png|jpe?g|gif|webp|svg)(\?.*|#.*)?$/i.test(url);
+};
+
+const getVideoEmbedUrl = (url: string) => {
+  if (!url) return '';
+  const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/i);
+  if (youtubeMatch?.[1]) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/i);
+  if (vimeoMatch?.[1]) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return url;
+};
+
 const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType = 'image', onMediaChange, label = "Multimedia", helper }) => {
   const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('url');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +117,23 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
       
       {currentValue && (
         <div className="relative group h-40 bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-inner mt-2">
-          <img src={currentValue} alt="Preview" className="h-full w-full object-contain p-2" />
+          {mediaType === 'video' ? (
+            <iframe
+              src={getVideoEmbedUrl(currentValue)}
+              className="h-full w-full"
+              title="Video preview"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : isImageUrl(currentValue) ? (
+            <img src={currentValue} alt="Preview" className="h-full w-full object-contain p-2" />
+          ) : (
+            <div className="h-full w-full flex flex-col items-center justify-center text-white/70 gap-2 px-4 text-center">
+              <LinkIcon size={20} />
+              <p className="text-[10px] font-bold uppercase tracking-widest">URL no es imagen</p>
+              <a href={currentValue} target="_blank" rel="noreferrer" className="text-[10px] text-white underline">Abrir enlace</a>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="text-white text-[10px] font-bold uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">Vista Previa</span>
           </div>
