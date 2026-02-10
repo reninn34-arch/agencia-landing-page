@@ -34,7 +34,8 @@ import {
   Search,
   ExternalLink,
   ChevronRight,
-  Monitor
+  Monitor,
+  Menu as MenuIcon
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -43,9 +44,10 @@ interface AdminDashboardProps {
 
 type Tab = 'general' | 'services' | 'portfolio' | 'plans' | 'about' | 'cta';
 
-const inputBaseClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-200 shadow-sm";
+const inputBaseClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-200 shadow-sm text-sm";
 const labelBaseClass = "block text-xs font-bold text-slate-500 uppercase mb-2 tracking-widest flex items-center gap-2";
-const cardClass = "bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6 transition-all hover:shadow-md";
+const cardClass = "bg-white p-4 md:p-8 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 space-y-4 md:space-y-6 transition-all hover:shadow-md";
+const cardTitleClass = "text-base md:text-lg font-black text-slate-900 border-b border-slate-50 pb-3 md:pb-4 flex items-center gap-2";
 
 interface MediaUploaderProps {
   currentValue: string;
@@ -157,6 +159,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [currentProject, setCurrentProject] = useState<Partial<Project>>({});
   const [projectSearch, setProjectSearch] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Track if changes were made
   const hasUnsavedChanges = useMemo(() => {
@@ -270,8 +273,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden text-slate-800 selection:bg-primary/20">
-      {/* SIDEBAR */}
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col z-30 shadow-xl shadow-slate-200/50">
+      {/* SIDEBAR - Hidden on mobile, visible on larger screens */}
+      <aside className={`w-72 bg-white border-r border-slate-200 flex flex-col z-40 shadow-xl shadow-slate-200/50 fixed md:relative h-full transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
         <div className="p-8 border-b border-slate-50">
           <div className="flex items-center gap-4 mb-1">
             <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black shadow-lg overflow-hidden shrink-0">
@@ -317,11 +322,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       {/* MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto relative custom-scrollbar bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px]">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-20 px-10 py-6 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className={`w-3 h-3 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></div>
-            <div>
-              <h1 className="text-xl font-black text-slate-900">
+        <div className="sticky top-0 z-20 px-4 md:px-10 py-4 md:py-6 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200 flex justify-between items-center gap-4">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+          >
+            <MenuIcon size={20} />
+          </button>
+          <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+            <div className={`w-3 h-3 rounded-full shrink-0 ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`}></div>
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-black text-slate-900 truncate">
                 {activeTab === 'general' && 'Identidad y Marca'}
                 {activeTab === 'services' && 'Nuestros Servicios'}
                 {activeTab === 'plans' && 'Planes de Inversión'}
@@ -329,18 +340,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 {activeTab === 'about' && 'Sobre Nosotros'}
                 {activeTab === 'cta' && 'Llamado a la Acción'}
               </h1>
-              <p className="text-xs text-slate-400 font-medium">Gestiona el contenido visible para tus clientes</p>
+              <p className="text-[10px] md:text-xs text-slate-400 font-medium hidden md:block">Gestiona el contenido visible para tus clientes</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
              {hasUnsavedChanges && (
-               <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 animate-fade-in uppercase tracking-widest">Cambios pendientes</span>
+               <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 md:px-3 py-1 md:py-1.5 rounded-full border border-amber-100 animate-fade-in uppercase tracking-widest hidden sm:inline">Cambios pendientes</span>
              )}
              <button 
                onClick={handleSaveContent} 
                disabled={isSaving || !hasUnsavedChanges} 
-               className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all transform active:scale-95 shadow-xl ${
+               className={`flex items-center gap-1 md:gap-2 px-3 md:px-8 py-2.5 md:py-3.5 rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest transition-all transform active:scale-95 shadow-xl ${
                  isSaving 
                  ? 'bg-emerald-500 text-white' 
                  : hasUnsavedChanges 
@@ -348,19 +359,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                }`}
              >
-               {isSaving ? <Check size={18} className="animate-bounce" /> : <Save size={18}/>}
-               {isSaving ? '¡Guardado!' : 'Guardar Todo'}
+               {isSaving ? <Check size={16} className="animate-bounce" /> : <Save size={16}/>}
+               <span className="hidden md:inline">{isSaving ? '¡Guardado!' : 'Guardar Todo'}</span>
+               <span className="md:hidden">{isSaving ? '✓' : 'Guardar'}</span>
              </button>
           </div>
         </div>
 
-        <div className="p-10 max-w-6xl mx-auto space-y-10 pb-32">
+        <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-10 pb-32">
           
           {/* TAB: GENERAL */}
           {activeTab === 'general' && (
             <div className="space-y-8 animate-fade-in-up">
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Building size={20} className="text-primary"/> Perfil de la Agencia</h3>
+                <h3 className={cardTitleClass}><Building size={20} className="text-primary"/> Perfil de la Agencia</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className={labelBaseClass}>Nombre Comercial</label>
@@ -376,7 +388,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
 
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Shield size={20} className="text-primary"/> Seguridad del Panel</h3>
+                <h3 className={cardTitleClass}><Shield size={20} className="text-primary"/> Seguridad del Panel</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className={labelBaseClass}>Nueva Contraseña Administrativa</label>
@@ -401,7 +413,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
 
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Share2 size={20} className="text-primary"/> Ecosistema Social</h3>
+                <h3 className={cardTitleClass}><Share2 size={20} className="text-primary"/> Ecosistema Social</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {[
                     { id: 'facebook', icon: Facebook, label: 'Facebook URL' },
@@ -428,7 +440,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               </div>
 
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Monitor size={20} className="text-primary"/> Portada Principal (Hero)</h3>
+                <h3 className={cardTitleClass}><Monitor size={20} className="text-primary"/> Portada Principal (Hero)</h3>
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
@@ -454,7 +466,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'services' && (
             <div className="space-y-8 animate-fade-in-up">
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Briefcase size={20} className="text-primary"/> Encabezado</h3>
+                <h3 className={cardTitleClass}><Briefcase size={20} className="text-primary"/> Encabezado</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className={labelBaseClass}>Título Sección</label>
@@ -493,7 +505,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'plans' && (
             <div className="space-y-8 animate-fade-in-up">
               <div className={cardClass}>
-                <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><CreditCard size={20} className="text-primary"/> Configuración Global de Precios</h3>
+                <h3 className={cardTitleClass}><CreditCard size={20} className="text-primary"/> Configuración Global de Precios</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div>
                     <label className={labelBaseClass}>Título Principal</label>
@@ -594,14 +606,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
               {/* PROJECT EDITOR MODAL */}
               {isEditingProject && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-                   <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in-up">
-                      <div className="px-10 py-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-black text-slate-900 text-2xl">Editor de Proyecto</h3>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4 overflow-y-auto">
+                   <div className="bg-white rounded-2xl md:rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in-up max-h-[90vh] flex flex-col">
+                      <div className="px-4 md:px-10 py-4 md:py-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        <div className="min-w-0">
+                          <h3 className="font-black text-slate-900 text-lg md:text-2xl">Editor de Proyecto</h3>
                           <p className="text-xs text-slate-400 font-medium uppercase tracking-[0.2em] mt-1">Configuración multimedia</p>
                         </div>
-                        <button onClick={() => setIsEditingProject(false)} className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-red-500 transition-all transform active:scale-90"><X size={24}/></button>
+                        <button onClick={() => setIsEditingProject(false)} className="w-10 md:w-12 h-10 md:h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 hover:text-red-500 transition-all transform active:scale-90 shrink-0"><X size={20}/></button>
                       </div>
                       
                       <form 
@@ -611,14 +623,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           else addProject(currentProject as Omit<Project,'id'>); 
                           setIsEditingProject(false); 
                         }} 
-                        className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar"
+                        className="p-4 md:p-10 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar flex-1"
                       >
                          <div>
                             <label className={labelBaseClass}>Nombre del Caso de Éxito</label>
                             <input className={inputBaseClass} placeholder="Ej: Rediseño App Bancaria" value={currentProject.title} onChange={e => setCurrentProject({...currentProject, title: e.target.value})} required />
                          </div>
                          
-                         <div className="grid grid-cols-2 gap-8">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                            <div>
                              <label className={labelBaseClass}>Categoría</label>
                              <select className={inputBaseClass} value={currentProject.category} onChange={e => setCurrentProject({...currentProject, category: e.target.value})}>
@@ -663,7 +675,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'about' && (
             <div className="space-y-8 animate-fade-in-up">
               <div className={cardClass}>
-                 <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><Users size={20} className="text-primary"/> Nuestra Propuesta de Valor</h3>
+                 <h3 className={cardTitleClass}><Users size={20} className="text-primary"/> Nuestra Propuesta de Valor</h3>
                  <label className={labelBaseClass}>Título del Módulo</label>
                  <input className={`${inputBaseClass} font-black text-xl`} value={localContent.about.sectionTitle} onChange={e => handleInputChange('about', 'sectionTitle', e.target.value)} />
               </div>
@@ -691,7 +703,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'cta' && (
             <div className="space-y-8 max-w-3xl mx-auto animate-fade-in-up">
                <div className={cardClass}>
-                  <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><MessageSquare size={20} className="text-primary"/> Cierre de Venta (CTA)</h3>
+                  <h3 className={cardTitleClass}><MessageSquare size={20} className="text-primary"/> Cierre de Venta (CTA)</h3>
                   <div className="space-y-6">
                     <div>
                       <label className={labelBaseClass}>Mensaje Impactante</label>
@@ -721,7 +733,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                </div>
 
                <div className={cardClass}>
-                  <h3 className="text-lg font-black text-slate-900 border-b border-slate-50 pb-4 flex items-center gap-3"><ImageIcon size={20} className="text-primary"/> Fondos y Estética</h3>
+                  <h3 className={cardTitleClass}><ImageIcon size={20} className="text-primary"/> Fondos y Estética</h3>
                   <MediaUploader 
                     currentValue={localContent.cta.backgroundImage} 
                     onMediaChange={v => handleInputChange('cta', 'backgroundImage', v)} 
