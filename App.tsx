@@ -19,7 +19,7 @@ const AdminFlow: React.FC<{
   const [loginError, setLoginError] = useState('');
 
   // Show loading screen while content is loading
-  if (!isLoaded) {
+  if (!isLoaded || !content) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-white">
