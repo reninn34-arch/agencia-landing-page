@@ -130,13 +130,19 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
           ) : (
             <div className="h-full w-full flex flex-col items-center justify-center text-white/70 gap-2 px-4 text-center">
               <LinkIcon size={20} />
-              <p className="text-[10px] font-bold uppercase tracking-widest">URL no es imagen</p>
-              <a href={currentValue} target="_blank" rel="noreferrer" className="text-[10px] text-white underline">Abrir enlace</a>
+              <p className="text-[10px] font-bold uppercase tracking-widest">URL detectada</p>
+              <a href={currentValue} target="_blank" rel="noreferrer" className="text-[10px] text-white underline">Abrir sitio</a>
             </div>
           )}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">Vista Previa</span>
-          </div>
+          {mediaType === 'video' ? (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">Vista Previa</span>
+            </div>
+          ) : isImageUrl(currentValue) ? (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">Vista Previa</span>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
