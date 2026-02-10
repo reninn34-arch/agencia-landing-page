@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useContent, Project, SiteContent, PricingPlan } from '../context/ContentContext';
+import { validateFormField, validateFileSize, validateImageFile } from '../utils/validation';
+import { FormError, FieldError, FormSuccess } from './FormError';
+import { SecurePasswordChange } from './SecurePasswordChange';
 import { 
   LayoutDashboard, 
   Type, 
@@ -171,6 +174,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [showPass, setShowPass] = useState(false);
   const [confirmPass, setConfirmPass] = useState(content.adminPassword);
   const [passError, setPassError] = useState('');
+  
+  // Validation states
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+  const [changePassword, setChangePassword] = useState(false);
+  const [securePasswordMode, setSecurePasswordMode] = useState(false);
 
   useEffect(() => { 
     setLocalContent(content); 
@@ -187,7 +196,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   }, [localContent.adminPassword, confirmPass]);
 
   const handleSaveContent = async () => {
-    if (passError) {
+    if (passError && changePassword) {
       alert("Por favor, corrige los errores de contraseña.");
       return;
     }
@@ -225,7 +234,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       
       // Update local context
       updateContent(localContent);
-      alert('Contenido guardado exitosamente');
+      setSavedSuccessfully(true);
+      setTimeout(() => setSavedSuccessfully(false), 4000);
     } catch (err) {
       console.error('Error saving content:', err);
       alert('Error al guardar. Los cambios se guardaron localmente.');
@@ -395,6 +405,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         <div className="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-10 pb-32">
           
+          {savedSuccessfully && (
+            <FormSuccess 
+              message="✓ Contenido guardado exitosamente. Los cambios se han sincronizado con la base de datos."
+              onDismiss={() => setSavedSuccessfully(false)}
+            />
+          )}
+
           {/* TAB: GENERAL */}
           {activeTab === 'general' && (
             <div className="space-y-8 animate-fade-in-up">
@@ -403,7 +420,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className={labelBaseClass}>Nombre Comercial</label>
-                    <input className={inputBaseClass} placeholder="Ej: Elite Media Agency" value={localContent.siteName} onChange={e => handleTopLevelChange('siteName', e.target.value)} />
+                    <input 
+                      className={`${inputBaseClass} ${validationErrors.siteName ? 'border-red-300 bg-red-50/30' : ''}`}
+                      placeholder="Ej: Elite Media Agency" 
+                      value={localContent.siteName} 
+                      onChange={(e) => {
+                        handleTopLevelChange('siteName', e.target.value);
+                        const error = validateFormField('name', e.target.value);
+                        setValidationErrors(prev => ({
+                          ...prev,
+                          siteName: error || ''
+                        }));
+                      }} 
+                    />
+                    {validationErrors.siteName && <FieldError error={validationErrors.siteName} />}
                   </div>
                   <MediaUploader 
                     currentValue={localContent.logo} 
@@ -416,27 +446,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
               <div className={cardClass}>
                 <h3 className={cardTitleClass}><Shield size={20} className="text-primary"/> Seguridad del Panel</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className={labelBaseClass}>Nueva Contraseña Administrativa</label>
-                    <div className="relative">
-                      <input 
-                        type={showPass ? "text" : "password"} 
-                        className={`${inputBaseClass} font-mono pr-12 ${passError ? 'border-red-300 bg-red-50/30' : ''}`} 
-                        value={localContent.adminPassword} 
-                        onChange={e => handleTopLevelChange('adminPassword', e.target.value)} 
+                
+                {securePasswordMode ? (
+                  <SecurePasswordChange
+                    currentPassword={content.adminPassword}
+                    onPasswordChange={(newPassword) => {
+                      handleTopLevelChange('adminPassword', newPassword);
+                      setSavedSuccessfully(true);
+                      setSecurePasswordMode(false);
+                      setTimeout(() => setSavedSuccessfully(false), 4000);
+                    }}
+                    onCancel={() => setSecurePasswordMode(false)}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {savedSuccessfully && (
+                      <FormSuccess 
+                        message="✓ Contraseña actualizada correctamente"
+                        onDismiss={() => setSavedSuccessfully(false)}
                       />
-                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSecurePasswordMode(true)}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Shield size={18} />
+                      Cambiar Contraseña de Forma Segura
+                    </button>
+                    <p className="text-xs text-slate-500 text-center">
+                      Este método requiere confirmar tu contraseña actual para mayor seguridad
+                    </p>
                   </div>
-                  <div>
-                    <label className={labelBaseClass}>Confirmar Contraseña</label>
-                    <input type={showPass ? "text" : "password"} className={`${inputBaseClass} font-mono ${passError ? 'border-red-300 bg-red-50/30' : ''}`} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} />
-                    {passError && <p className="text-[10px] font-bold text-red-500 mt-2 flex items-center gap-1 uppercase tracking-tighter"><AlertCircle size={12}/> {passError}</p>}
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className={cardClass}>

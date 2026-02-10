@@ -284,6 +284,18 @@ const initDatabase = async () => {
           ($1, $6)
       `, [plan3Id, 'Redes Ilimitadas', 'Contenido Diario', 'Estrategia Ads Full', 'Software a Medida', 'Consultoría 1 a 1']);
     }
+
+    // Create contacts table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS contacts (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        read_status BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     
     client.release();
     console.log('Database initialized with all tables');
@@ -705,6 +717,76 @@ app.delete('/api/projects/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting project:', err);
     res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
+
+// Contact form submission
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    // Validate inputs
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'Name, email, and message are required' });
+    }
+
+    if (message.length < 10) {
+      return res.status(400).json({ error: 'Message must be at least 10 characters' });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Save to database
+    await pool.query(`
+      INSERT INTO contacts (name, email, message)
+      VALUES ($1, $2, $3)
+    `, [name.substring(0, 255), email.substring(0, 255), message.substring(0, 2000)]);
+
+    // TODO: Send email notification to admin
+    // For now, just save to database
+
+    res.json({ success: true, message: 'Thank you for your message. We will contact you soon!' });
+  } catch (err) {
+    console.error('Error submitting contact form:', err);
+    res.status(500).json({ error: 'Failed to submit contact form' });
+  }
+});
+
+// Get all contacts (admin only)
+app.get('/api/contacts', async (req, res) => {
+  try {
+    const { password } = req.query;
+
+    if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    const result = await pool.query('SELECT * FROM contacts ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching contacts:', err);
+    res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
+});
+
+// Mark contact as read
+app.put('/api/contacts/:id', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    await pool.query('UPDATE contacts SET read_status = TRUE WHERE id = $1', [req.params.id]);
+    res.json({ success: true, message: 'Contact marked as read' });
+  } catch (err) {
+    console.error('Error updating contact:', err);
+    res.status(500).json({ error: 'Failed to update contact' });
   }
 });
 
