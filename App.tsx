@@ -66,7 +66,6 @@ const AdminFlow: React.FC<{
               </button>
             </div>
           </form>
-          <p className="mt-6 text-[10px] text-center text-slate-400 italic">La contraseña inicial es admin123 si no la has cambiado.</p>
         </div>
       </div>
     );
