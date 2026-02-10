@@ -243,16 +243,38 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     };
 
-    const loadProjects = () => {
-      const savedProjects = localStorage.getItem('el_digital_projects');
-      if (savedProjects) {
-        try {
-          setProjects(JSON.parse(savedProjects));
-        } catch {
-          setProjects(defaultProjects);
+    const loadProjects = async () => {
+      try {
+        // Try loading from API first
+        const response = await fetch(`${apiUrl}/api/projects`);
+        if (response.ok) {
+          const apiProjects = await response.json();
+          setProjects(apiProjects);
+          localStorage.setItem('el_digital_projects', JSON.stringify(apiProjects));
+        } else {
+          // Fallback to localStorage
+          const savedProjects = localStorage.getItem('el_digital_projects');
+          if (savedProjects) {
+            try {
+              setProjects(JSON.parse(savedProjects));
+            } catch {
+              setProjects(defaultProjects);
+            }
+          } else {
+            setProjects(defaultProjects);
+          }
         }
-      } else {
-        setProjects(defaultProjects);
+      } catch (err) {
+        console.log('API not available for projects, using localStorage');
+        // Fallback to localStorage if API is not available
+        const savedProjects = localStorage.getItem('el_digital_projects');
+        if (savedProjects) {
+          try {
+            setProjects(JSON.parse(savedProjects));
+          } catch {
+            setProjects(defaultProjects);
+          }
+        }
       }
     };
 
