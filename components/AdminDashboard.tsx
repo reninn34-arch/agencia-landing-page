@@ -479,11 +479,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
+              <div className="flex justify-between items-center gap-4">
+                <h4 className="text-base font-black text-slate-900">Tus Servicios ({localContent.services.items.length})</h4>
+                <button 
+                  onClick={() => {
+                    const newService = { id: Date.now(), title: 'Nuevo Servicio', description: '' };
+                    setLocalContent(prev => ({
+                      ...prev,
+                      services: { ...prev.services, items: [...prev.services.items, newService] }
+                    }));
+                  }}
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-sky-600 transition-all flex items-center gap-2"
+                >
+                  <Plus size={16}/> Agregar Servicio
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {localContent.services.items.map((item, idx) => (
-                  <div key={item.id} className={`${cardClass} hover:border-primary/30 group`}>
+                  <div key={item.id} className={`${cardClass} hover:border-primary/30 group relative`}>
                     <div className="flex justify-between items-center mb-2">
                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-3 py-1 rounded-full">Servicio #{idx+1}</span>
+                       <button 
+                         onClick={() => setLocalContent(prev => ({
+                           ...prev,
+                           services: { ...prev.services, items: prev.services.items.filter((_, i) => i !== idx) }
+                         }))}
+                         className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-50 p-1 rounded-lg transition-all"
+                         title="Eliminar servicio"
+                       >
+                         <Trash2 size={16}/>
+                       </button>
                     </div>
                     <div className="space-y-4">
                       <div>
@@ -518,15 +544,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 </div>
               </div>
 
+              <div className="flex justify-between items-center gap-4 flex-wrap">
+                <h4 className="text-base font-black text-slate-900">Tus Planes ({localContent.plans.items.length})</h4>
+                <button 
+                  onClick={() => {
+                    const newPlan = { 
+                      id: Date.now(), 
+                      name: 'Nuevo Plan', 
+                      price: '$99', 
+                      period: '/mes',
+                      isPopular: false,
+                      features: ['Característica 1'],
+                      buttonText: 'Contratar'
+                    };
+                    setLocalContent(prev => ({
+                      ...prev,
+                      plans: { ...prev.plans, items: [...prev.plans.items, newPlan] }
+                    }));
+                  }}
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-sky-600 transition-all flex items-center gap-2"
+                >
+                  <Plus size={16}/> Agregar Plan
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {localContent.plans.items.map((plan, idx) => (
-                   <div key={plan.id} className={`${cardClass} ${plan.isPopular ? 'ring-4 ring-primary/5 border-primary shadow-primary/10' : ''}`}>
+                   <div key={plan.id} className={`${cardClass} ${plan.isPopular ? 'ring-4 ring-primary/5 border-primary shadow-primary/10' : ''} group relative`}>
                       <div className="flex justify-between items-center mb-6">
                         <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-widest">Nivel {idx+1}</span>
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                           <input type="checkbox" className="w-4 h-4 rounded-lg text-primary focus:ring-primary/20 border-slate-300" checked={plan.isPopular} onChange={e => handleArrayItemChange('plans', idx, 'isPopular', e.target.checked)} />
-                           <span className="text-[10px] font-black uppercase text-slate-500 group-hover:text-primary transition-colors tracking-tighter">Popular</span>
-                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 cursor-pointer group/checkbox">
+                             <input type="checkbox" className="w-4 h-4 rounded-lg text-primary focus:ring-primary/20 border-slate-300" checked={plan.isPopular} onChange={e => handleArrayItemChange('plans', idx, 'isPopular', e.target.checked)} />
+                             <span className="text-[10px] font-black uppercase text-slate-500 group-hover/checkbox:text-primary transition-colors tracking-tighter">Popular</span>
+                          </label>
+                          <button 
+                            onClick={() => setLocalContent(prev => ({
+                              ...prev,
+                              plans: { ...prev.plans, items: prev.plans.items.filter((_, i) => i !== idx) }
+                            }))}
+                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-50 p-1 rounded-lg transition-all"
+                            title="Eliminar plan"
+                          >
+                            <Trash2 size={16}/>
+                          </button>
+                        </div>
                       </div>
                       <div className="space-y-4">
                         <input className={`${inputBaseClass} font-black text-center text-lg`} value={plan.name} onChange={e => handleArrayItemChange('plans', idx, 'name', e.target.value)} placeholder="Nombre del Plan" />
@@ -679,6 +741,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                  <label className={labelBaseClass}>Título del Módulo</label>
                  <input className={`${inputBaseClass} font-black text-xl`} value={localContent.about.sectionTitle} onChange={e => handleInputChange('about', 'sectionTitle', e.target.value)} />
               </div>
+
+              <div className="flex justify-between items-center gap-4">
+                <h4 className="text-base font-black text-slate-900">Pilares de Diferenciación ({localContent.about.items.length})</h4>
+                <button 
+                  onClick={() => {
+                    const newItem = { id: Date.now(), title: 'Nuevo Pilar', description: '' };
+                    setLocalContent(prev => ({
+                      ...prev,
+                      about: { ...prev.about, items: [...prev.about.items, newItem] }
+                    }));
+                  }}
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-sky-600 transition-all flex items-center gap-2"
+                >
+                  <Plus size={16}/> Agregar Pilar
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 gap-6">
                 {localContent.about.items.map((item, idx) => (
                   <div key={item.id} className={`${cardClass} flex gap-8 items-start relative overflow-hidden group`}>
@@ -693,6 +772,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <textarea className={inputBaseClass} rows={2} value={item.description} onChange={e => handleArrayItemChange('about', idx, 'description', e.target.value)} />
                       </div>
                     </div>
+                    <button 
+                      onClick={() => setLocalContent(prev => ({
+                        ...prev,
+                        about: { ...prev.about, items: prev.about.items.filter((_, i) => i !== idx) }
+                      }))}
+                      className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all shrink-0"
+                      title="Eliminar pilar"
+                    >
+                      <Trash2 size={20}/>
+                    </button>
                   </div>
                 ))}
               </div>
