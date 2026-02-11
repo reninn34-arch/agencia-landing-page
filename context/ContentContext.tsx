@@ -12,6 +12,11 @@ export interface Project {
   tech: string;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+}
+
 export interface ServiceItem {
   id: number;
   title: string;
@@ -163,12 +168,22 @@ const defaultProjects: Project[] = [
   }
 ];
 
+const defaultCategories: Category[] = [
+  { id: 1, name: 'Web' },
+  { id: 2, name: 'Software' },
+  { id: 3, name: 'Redes' },
+  { id: 4, name: 'Logos' },
+  { id: 5, name: 'Sin categoria' }
+];
+
 interface ContentContextType {
   projects: Project[];
+  categories: Category[];
   content: SiteContent;
   isLoaded: boolean;
   updateContent: (newContent: SiteContent) => void;
   updateProjects: (newProjects: Project[]) => void;
+  updateCategories: (newCategories: Category[]) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: number) => void;
@@ -201,6 +216,18 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
     return defaultProjects;
+  });
+
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const savedCategories = localStorage.getItem('el_digital_categories');
+    if (savedCategories) {
+      try {
+        return JSON.parse(savedCategories);
+      } catch {
+        return defaultCategories;
+      }
+    }
+    return defaultCategories;
   });
   
   const [content, setContent] = useState<SiteContent>(getInitialContent);
@@ -279,8 +306,42 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     };
 
+    const loadCategories = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/api/categories`);
+        if (response.ok) {
+          const apiCategories = await response.json();
+          setCategories(apiCategories);
+          localStorage.setItem('el_digital_categories', JSON.stringify(apiCategories));
+          return;
+        }
+
+        const savedCategories = localStorage.getItem('el_digital_categories');
+        if (savedCategories) {
+          try {
+            setCategories(JSON.parse(savedCategories));
+          } catch {
+            setCategories(defaultCategories);
+          }
+        } else {
+          setCategories(defaultCategories);
+        }
+      } catch (err) {
+        console.log('API not available for categories, using localStorage');
+        const savedCategories = localStorage.getItem('el_digital_categories');
+        if (savedCategories) {
+          try {
+            setCategories(JSON.parse(savedCategories));
+          } catch {
+            setCategories(defaultCategories);
+          }
+        }
+      }
+    };
+
     loadContent();
     loadProjects();
+    loadCategories();
     setIsLoaded(true);
   }, [apiUrl]);
 
@@ -288,18 +349,26 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isLoaded && content) {
       localStorage.setItem('el_digital_projects', JSON.stringify(projects));
       localStorage.setItem('el_digital_content', JSON.stringify(content));
+      localStorage.setItem('el_digital_categories', JSON.stringify(categories));
     }
-  }, [projects, content, isLoaded]);
+  }, [projects, content, categories, isLoaded]);
 
   const updateContent = (newContent: SiteContent) => setContent(newContent);
   const updateProjects = (newProjects: Project[]) => setProjects(newProjects);
+  const updateCategories = (newCategories: Category[]) => setCategories(newCategories);
   const addProject = (projectData: Omit<Project, 'id'>) => setProjects([{ ...projectData, id: Date.now() }, ...projects]);
   const updateProject = (updatedProject: Project) => setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
   const deleteProject = (id: number) => setProjects(projects.filter(p => p.id !== id));
-  const resetToDefaults = () => { if(confirm("¿Restaurar todo?")) { setProjects(defaultProjects); setContent(defaultContent); } };
+  const resetToDefaults = () => {
+    if (confirm("¿Restaurar todo?")) {
+      setProjects(defaultProjects);
+      setContent(defaultContent);
+      setCategories(defaultCategories);
+    }
+  };
 
   return (
-    <ContentContext.Provider value={{ projects, content, isLoaded, updateContent, updateProjects, addProject, updateProject, deleteProject, resetToDefaults }}>
+    <ContentContext.Provider value={{ projects, categories, content, isLoaded, updateContent, updateProjects, updateCategories, addProject, updateProject, deleteProject, resetToDefaults }}>
       {children}
     </ContentContext.Provider>
   );

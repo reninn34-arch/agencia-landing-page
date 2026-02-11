@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, PlayCircle } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
 
-const categories = ["Todos", "Web", "Software", "Redes", "Logos"];
-
 const Portfolio: React.FC = () => {
-  const { projects } = useContent();
+  const { projects, categories } = useContent();
   const [activeFilter, setActiveFilter] = useState("Todos");
+
+  const filterCategories = useMemo(() => {
+    const unique = new Set<string>();
+    categories.forEach(cat => {
+      const trimmed = (cat.name || '').trim();
+      if (trimmed) unique.add(trimmed);
+    });
+    return ['Todos', ...Array.from(unique)];
+  }, [categories]);
+
+  useEffect(() => {
+    if (!filterCategories.includes(activeFilter)) {
+      setActiveFilter('Todos');
+    }
+  }, [filterCategories, activeFilter]);
 
   const filteredProjects = activeFilter === "Todos" 
     ? projects 
@@ -41,7 +54,7 @@ const Portfolio: React.FC = () => {
 
         {/* Filters */}
         <div className="flex flex-wrap justify-center gap-2 mb-12">
-            {categories.map((cat) => (
+            {filterCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveFilter(cat)}

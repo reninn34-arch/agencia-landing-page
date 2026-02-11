@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useContent, Project, SiteContent, PricingPlan } from '../context/ContentContext';
+import { useContent, Project, SiteContent, PricingPlan, Category } from '../context/ContentContext';
 import { validateFormField, validateFileSize, validateImageFile } from '../utils/validation';
 import { processImageFile } from '../utils/imageCompression';
 import { FormError, FieldError, FormSuccess } from './FormError';
@@ -164,20 +164,30 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
-  const { projects, content, updateContent, updateProjects, addProject, updateProject, deleteProject, resetToDefaults } = useContent();
+  const { projects, categories, content, updateContent, updateProjects, updateCategories, addProject, updateProject, deleteProject, resetToDefaults } = useContent();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [localContent, setLocalContent] = useState<SiteContent>(content);
   const [localProjects, setLocalProjects] = useState<Project[]>(projects);
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+  const [categoryDrafts, setCategoryDrafts] = useState<Record<number, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [currentProject, setCurrentProject] = useState<Partial<Project>>({});
   const [projectSearch, setProjectSearch] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const UNASSIGNED_CATEGORY = 'Sin categoria';
+
   // Track if changes were made
   const hasUnsavedChanges = useMemo(() => {
-    return JSON.stringify(localContent) !== JSON.stringify(content) || JSON.stringify(localProjects) !== JSON.stringify(projects);
-  }, [localContent, content, localProjects, projects]);
+    return (
+      JSON.stringify(localContent) !== JSON.stringify(content) ||
+      JSON.stringify(localProjects) !== JSON.stringify(projects) ||
+      JSON.stringify(localCategories) !== JSON.stringify(categories)
+    );
+  }, [localContent, content, localProjects, projects, localCategories, categories]);
 
   // Password improvement states
   const [showPass, setShowPass] = useState(false);
@@ -193,8 +203,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   useEffect(() => { 
     setLocalContent(content); 
     setLocalProjects(projects);
+    setLocalCategories(categories);
+    setCategoryDrafts({});
     setConfirmPass(content.adminPassword);
-  }, [content, projects]);
+  }, [content, projects, categories]);
 
   useEffect(() => {
     if (localContent.adminPassword !== confirmPass) {
@@ -224,6 +236,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           body: JSON.stringify({
             content: localContent,
             projects: localProjects,
+            categories: localCategories,
             password: localContent.adminPassword
           })
         });
@@ -232,23 +245,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           throw new Error('Failed to save to database');
         }
 
-        // After saving, reload projects from API to ensure they're synced
+        // After saving, reload projects and categories from API to ensure they're synced
         const projectsResponse = await fetch(`${apiUrl}/api/projects`);
         if (projectsResponse.ok) {
           const updatedProjects = await projectsResponse.json();
           updateProjects(updatedProjects);
           setLocalProjects(updatedProjects);
         }
+
+        const categoriesResponse = await fetch(`${apiUrl}/api/categories`);
+        if (categoriesResponse.ok) {
+          const updatedCategories = await categoriesResponse.json();
+          updateCategories(updatedCategories);
+          setLocalCategories(updatedCategories);
+        }
       }
       
       // Update local context
       updateContent(localContent);
+      updateProjects(localProjects);
+      updateCategories(localCategories);
       setSavedSuccessfully(true);
       setTimeout(() => setSavedSuccessfully(false), 4000);
     } catch (err) {
       console.error('Error saving content:', err);
       alert('Error al guardar. Los cambios se guardaron localmente.');
       updateContent(localContent);
+      updateProjects(localProjects);
+      updateCategories(localCategories);
     } finally {
       setTimeout(() => setIsSaving(false), 1000);
     }
@@ -283,6 +307,76 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       p.category.toLowerCase().includes(projectSearch.toLowerCase())
     );
   }, [localProjects, projectSearch]);
+
+  const normalizeCategoryName = (value: string) => value.trim();
+
+  const isDuplicateCategory = (name: string, excludeId?: number, list?: Category[]) => {
+    const compareList = list || localCategories;
+    return compareList.some(cat => cat.id !== excludeId && cat.name.trim().toLowerCase() === name.trim().toLowerCase());
+  };
+
+  const ensureCategoryFallback = (list: Category[]) => {
+    if (list.length > 0) return list;
+    return [{ id: Date.now(), name: UNASSIGNED_CATEGORY }];
+  };
+
+  const handleAddCategory = () => {
+    const trimmed = normalizeCategoryName(newCategoryName);
+    if (!trimmed) {
+      setCategoryError('Ingresa un nombre de categoría válido');
+      return;
+    }
+    if (isDuplicateCategory(trimmed)) {
+      setCategoryError('Esa categoría ya existe');
+      return;
+    }
+
+    setCategoryError('');
+    setLocalCategories(prev => [...prev, { id: Date.now(), name: trimmed }]);
+    setNewCategoryName('');
+  };
+
+  const handleRenameCategory = (id: number, value: string) => {
+    const trimmed = normalizeCategoryName(value);
+    setLocalCategories(prev => {
+      const current = prev.find(cat => cat.id === id);
+      if (!current) return prev;
+      if (!trimmed) {
+        setCategoryError('El nombre de categoría no puede estar vacío');
+        return prev;
+      }
+      if (isDuplicateCategory(trimmed, id, prev)) {
+        setCategoryError('Esa categoría ya existe');
+        return prev;
+      }
+
+      setCategoryError('');
+      if (current.name !== trimmed) {
+        setLocalProjects(projectsPrev =>
+          projectsPrev.map(p => p.category === current.name ? { ...p, category: trimmed } : p)
+        );
+      }
+
+      return prev.map(cat => cat.id === id ? { ...cat, name: trimmed } : cat);
+    });
+  };
+
+  const handleDeleteCategory = (id: number) => {
+    const categoryToDelete = localCategories.find(cat => cat.id === id);
+    if (!categoryToDelete) return;
+    if (!confirm('¿Eliminar esta categoría? Los proyectos se reasignarán automáticamente.')) return;
+
+    const remaining = localCategories.filter(cat => cat.id !== id);
+    const fallbackName = remaining[0]?.name || UNASSIGNED_CATEGORY;
+    const nextCategories = ensureCategoryFallback(
+      remaining.length === 0 ? [{ id: Date.now(), name: fallbackName }] : remaining
+    );
+
+    setLocalCategories(nextCategories);
+    setLocalProjects(prev =>
+      prev.map(p => p.category === categoryToDelete.name ? { ...p, category: fallbackName } : p)
+    );
+  };
 
   const SidebarItem = ({ id, icon: Icon, label }: { id: Tab, icon: any, label: string }) => (
     <button 
@@ -701,11 +795,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                    />
                 </div>
                 <button 
-                  onClick={() => { setCurrentProject({ title: '', category: 'Web', mediaType: 'image', image: '', description: '', tech: '' }); setIsEditingProject(true); }} 
+                  onClick={() => { setCurrentProject({ title: '', category: localCategories[0]?.name || UNASSIGNED_CATEGORY, mediaType: 'image', image: '', description: '', tech: '' }); setIsEditingProject(true); }} 
                   className="w-full md:w-auto bg-primary text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-sky-600 transition-all transform active:scale-95 flex items-center justify-center gap-2"
                 >
                   <Plus size={18}/> Nuevo Proyecto
                 </button>
+              </div>
+
+              <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm md:text-base font-black text-slate-900">Categorías del Portafolio</h3>
+                    <p className="text-[10px] md:text-xs text-slate-400 font-medium">Crea, renombra o elimina categorías y guarda para persistir.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input
+                    className={inputBaseClass}
+                    placeholder="Nueva categoría"
+                    value={newCategoryName}
+                    onChange={e => setNewCategoryName(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    className="bg-slate-900 text-white px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={14}/> Agregar
+                  </button>
+                </div>
+
+                {categoryError && (
+                  <div className="flex items-center gap-2 text-red-500 text-xs font-bold">
+                    <AlertCircle size={14} /> {categoryError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {localCategories.map(cat => (
+                    <div key={cat.id} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                      <input
+                        className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none"
+                        value={categoryDrafts[cat.id] ?? cat.name}
+                        onChange={e => setCategoryDrafts(prev => ({ ...prev, [cat.id]: e.target.value }))}
+                        onBlur={e => {
+                          handleRenameCategory(cat.id, e.target.value);
+                          setCategoryDrafts(prev => {
+                            const next = { ...prev };
+                            delete next[cat.id];
+                            return next;
+                          });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -778,10 +931,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                            <div>
                              <label className={labelBaseClass}>Categoría</label>
                              <select className={inputBaseClass} value={currentProject.category} onChange={e => setCurrentProject({...currentProject, category: e.target.value})}>
-                               <option value="Web">Desarrollo Web</option>
-                               <option value="Software">Software SaaS</option>
-                               <option value="Redes">Marketing & Redes</option>
-                               <option value="Logos">Identidad Visual</option>
+                               {(localCategories.length > 0 ? localCategories : [{ id: 0, name: UNASSIGNED_CATEGORY }]).map(cat => (
+                                 <option key={cat.id} value={cat.name}>{cat.name}</option>
+                               ))}
                              </select>
                            </div>
                            <div>

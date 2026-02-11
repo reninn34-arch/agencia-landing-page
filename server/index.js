@@ -101,6 +101,16 @@ const initDatabase = async () => {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS portfolio_categories (
+        id SERIAL PRIMARY KEY,
+        site_id INT DEFAULT 1,
+        name VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS pricing_plans (
         id SERIAL PRIMARY KEY,
         site_id INT DEFAULT 1,
@@ -284,6 +294,19 @@ const initDatabase = async () => {
           ($1, $5),
           ($1, $6)
       `, [plan3Id, 'Redes Ilimitadas', 'Contenido Diario', 'Estrategia Ads Full', 'Software a Medida', 'Consultoría 1 a 1']);
+    }
+
+    const categoriesResult = await client.query('SELECT COUNT(*) FROM portfolio_categories');
+    if (parseInt(categoriesResult.rows[0].count) === 0) {
+      await client.query(`
+        INSERT INTO portfolio_categories (site_id, name)
+        VALUES
+          (1, $1),
+          (1, $2),
+          (1, $3),
+          (1, $4),
+          (1, $5)
+      `, ['Web', 'Software', 'Redes', 'Logos', 'Sin categoria']);
     }
 
     // Create contacts table
@@ -481,10 +504,21 @@ app.get('/api/projects', async (req, res) => {
   }
 });
 
+// Get all portfolio categories
+app.get('/api/categories', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name FROM portfolio_categories ORDER BY id ASC');
+    res.json(result.rows.map(row => ({ id: row.id, name: row.name || '' })));
+  } catch (err) {
+    console.error('Error fetching categories:', err);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
 // Save content
 app.post('/api/content', async (req, res) => {
   try {
-    const { content, projects: projectsData, password } = req.body;
+    const { content, projects: projectsData, categories: categoriesData, password } = req.body;
     
     // Verify password
     if (password !== process.env.ADMIN_PASSWORD && password !== 'admin123') {
@@ -630,6 +664,19 @@ app.post('/api/content', async (req, res) => {
             project.description,
             project.tech
           ]);
+        }
+      }
+
+      // Update portfolio categories
+      if (categoriesData && Array.isArray(categoriesData)) {
+        await client.query('DELETE FROM portfolio_categories WHERE site_id = 1');
+        for (const category of categoriesData) {
+          const name = (category.name || '').trim();
+          if (!name) continue;
+          await client.query(
+            'INSERT INTO portfolio_categories (site_id, name) VALUES (1, $1)',
+            [name]
+          );
         }
       }
 
