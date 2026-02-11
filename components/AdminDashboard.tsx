@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useContent, Project, SiteContent, PricingPlan } from '../context/ContentContext';
 import { validateFormField, validateFileSize, validateImageFile } from '../utils/validation';
+import { processImageFile } from '../utils/imageCompression';
 import { FormError, FieldError, FormSuccess } from './FormError';
 import { SecurePasswordChange } from './SecurePasswordChange';
 import { 
@@ -79,13 +80,20 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
   const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('url');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2000000) { alert("Archivo demasiado grande. Máximo 2MB."); return; }
-      const reader = new FileReader();
-      reader.onloadend = () => onMediaChange(reader.result as string, 'image');
-      reader.readAsDataURL(file);
+      // Process and compress image automatically
+      const result = await processImageFile(file, 0.8);
+      
+      if (!result.success) {
+        alert(result.error || 'Error al procesar la imagen');
+        return;
+      }
+      
+      if (result.data) {
+        onMediaChange(result.data, 'image');
+      }
     }
   };
 
@@ -112,6 +120,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ currentValue, mediaType =
             <Upload size={20} className="text-slate-400 group-hover:text-primary" />
           </div>
           <p className="text-xs text-slate-500 font-bold">Haz clic para buscar archivo</p>
+          <p className="text-[10px] text-slate-400 mt-1">Se optimizará automáticamente</p>
         </div>
       ) : (
         <div className="relative">
